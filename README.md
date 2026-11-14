@@ -1,36 +1,26 @@
 # Encore
 
-Beat Saber 1.40.8 with custom songs and custom map support for the Steam Frame. It installs next to your normal Beat Saber and shows up in your library as **Beat Saber**, with the game's artwork. Your normal Beat Saber stays as it is.
+Modded Beat Saber for the Steam Frame. You get custom songs, and maps that need Chroma, Noodle Extensions, Mapping Extensions or Vivify just work.
 
-## What it does
-
-- Downloads Beat Saber 1.40.8 through your own Steam account. You need to own Beat Saber.
-- Installs the mods listed below and checks each download against a known checksum.
-- Adds a **Beat Saber** shortcut to your library with the game's artwork, set up to open in VR.
-
-1.40.8 is used because it's the newest version all the custom map mods support.
+It installs Beat Saber 1.40.8 alongside your regular copy, since that's the last version all of those mods support, and adds it to your library as Beat Saber. You need to own Beat Saber on Steam.
 
 ## Install
 
-1. On the Frame, open this page in the browser and press the button:
+1. On your Frame, open this page and tap the button:
 
    <a href="https://github.com/jimas21/encore/releases/latest/download/Install-Encore.desktop"><img src="img/install-button.svg" alt="Install Encore" width="220" /></a>
 
-2. Open the downloaded `Install-Encore.desktop` file. If it asks whether to trust it, say yes. A window opens and runs the install.
-3. If the window says Steam needs a restart, restart the Frame and open the same file again. This only happens the first time.
-4. When it says **Done**, start the new **Beat Saber** from your library (it's listed with your non-Steam games). The first launch takes a minute or two.
+2. Open `Install-Encore.desktop` from your downloads.
+3. When it says Done, launch Beat Saber from your non-Steam games.
 
-To download songs, use the **More Songs** button in the game.
+The first time, it might ask you to restart the Frame. Restart, then open the file again.
 
-To remove it, use this button the same way. It asks before deleting anything, since your downloaded songs are stored in the Encore folder.
+Use More Songs in the game to download songs.
 
-<a href="https://github.com/jimas21/encore/releases/latest/download/Uninstall-Encore.desktop"><img src="img/uninstall-button.svg" alt="Uninstall Encore" width="220" /></a>
+## What's included
 
-## What you get
+SongCore, BeatSaverDownloader, BeatSaverUpdater, BeatSaverVoting, PlaylistManager, BetterSongSearch, BetterSongList, Chroma, Noodle Extensions, Mapping Extensions, Vivify, Heck, CustomJSONData, BeatLeader, ScoreSaber and the BSIPA mod loader. The mods come from [BeatMods](https://beatmods.com) and belong to their authors.
 
-- **Songs:** SongCore, BeatSaverDownloader, BeatSaverUpdater, BeatSaverVoting, PlaylistManager, BetterSongSearch, BetterSongList
-- **Custom maps:** Chroma, Noodle Extensions, Mapping Extensions, Vivify, Heck, CustomJSONData
-- **Leaderboards:** BeatLeader, ScoreSaber
-- **Mod loader:** BSIPA, plus the libraries the mods above depend on
+## Removing it
 
-The mods are downloaded from [BeatMods](https://beatmods.com) during the install and belong to their authors. Not affiliated with Beat Games or Valve.
+Removing the shortcut in Steam leaves the game files behind (about 1.5 GB). To delete everything, open [Uninstall-Encore.desktop](https://github.com/jimas21/encore/releases/latest/download/Uninstall-Encore.desktop) on the Frame. Any songs you downloaded go with it.
