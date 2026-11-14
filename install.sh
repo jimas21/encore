@@ -300,6 +300,9 @@ install_mods() {
     mkdir -p "$INSTANCE/Libs" "$INSTANCE/Plugins" "$INSTANCE/UserData"
     cp -r "$INSTANCE/IPA/Libs/." "$INSTANCE/Libs/"
     find "$INSTANCE/IPA" -maxdepth 1 -type f -exec cp {} "$INSTANCE/" \;
+    # The game deletes steam_appid.txt when it starts. The shortcut's launch options carry
+    # SteamAppId/SteamGameId/SteamOverlayGameId instead (the same variables BSManager sets), so the
+    # file is only a fallback for starting the game outside Steam.
     echo "$APPID" > "$INSTANCE/steam_appid.txt"
     say "Mods installed ($(ls "$INSTANCE/Plugins" | grep -c '\.dll$') plugin files)"
 }
@@ -344,7 +347,7 @@ add_shortcut() {
         SteamClient.Apps.SetShortcutName(id, $js_name);
         SteamClient.Apps.SetShortcutExe(id, $js_exe);
         SteamClient.Apps.SetShortcutStartDir(id, $js_dir);
-        SteamClient.Apps.SetShortcutLaunchOptions(id, 'WINEDLLOVERRIDES=\"winhttp=n,b\" %command%');
+        SteamClient.Apps.SetShortcutLaunchOptions(id, 'SteamAppId=$APPID SteamGameId=$APPID SteamOverlayGameId=$APPID WINEDLLOVERRIDES=\"winhttp=n,b\" %command%');
         SteamClient.Apps.SpecifyCompatTool(id, '$PROTON_TOOL');
         SteamClient.Apps.SetShortcutIsVR(id, true);
         return 'ok';
@@ -360,7 +363,7 @@ add_shortcut() {
                                     setTimeout(r, 5000); }); }
         const o = appStore.GetAppOverviewByAppID(id) || {};
         return JSON.stringify({exe: d && d.strShortcutExe, opts: d && d.strLaunchOptions, tool: d && d.strCompatToolName, vr: !!o.vr_supported}); })()")"
-    echo "$got" | grep -q "winhttp=n,b" && echo "$got" | grep -q "$PROTON_TOOL" && echo "$got" | grep -q '"vr": *true\|"vr":true' ||
+    echo "$got" | grep -q "SteamAppId=$APPID" && echo "$got" | grep -q "winhttp=n,b" && echo "$got" | grep -q "$PROTON_TOOL" && echo "$got" | grep -q '"vr": *true\|"vr":true' ||
         warn "could not confirm every shortcut setting: $got"
 }
 
