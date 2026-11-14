@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Uninstall Modded Beat Saber
-Comment=Removes the modded Beat Saber copy and its library shortcut from this Steam Frame
-Icon=edit-delete
-Exec=konsole --hold -e bash -c "curl -fsSL -o /tmp/install-modded-beatsaber.sh https://github.com/jimas21/frame-modded-beatsaber/releases/latest/download/install.sh || { echo 'Could not download the uninstaller. Check that the headset is online, then try again.'; exit 1; }; bash /tmp/install-modded-beatsaber.sh --uninstall"
-Terminal=false

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Uninstall Encore
+Comment=Removes Encore (the modded Beat Saber copy and its library shortcut) from this Steam Frame
+Icon=edit-delete
+Exec=konsole --hold -e bash -c "curl -fsSL -o /tmp/encore-install.sh https://github.com/jimas21/encore/releases/latest/download/install.sh || { echo 'Could not download the uninstaller. Check that the headset is online, then try again.'; exit 1; }; bash /tmp/encore-install.sh --uninstall"
+Terminal=false

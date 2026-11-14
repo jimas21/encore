@@ -1,14 +1,14 @@
 #!/bin/bash
-# Modded Beat Saber for the Steam Frame: one-command installer.
+# Encore: Beat Saber 1.40.8 with custom songs and map mods, next to your normal Beat Saber, on the Steam Frame.
 #
-#   curl -fsSL https://github.com/jimas21/frame-modded-beatsaber/releases/latest/download/install.sh | bash
+#   curl -fsSL https://github.com/jimas21/encore/releases/latest/download/install.sh | bash
 #
 # Puts Beat Saber 1.40.8 (the version every custom-map mod supports) next to your normal Beat Saber,
-# installs a pinned, checksum-verified set of 33 mods from BeatMods, and adds "Beat Saber (Modded)"
-# to your Steam library as a VR game. Your normal Beat Saber is not touched.
+# installs a pinned, checksum-verified set of 33 mods from BeatMods, and adds a "Beat Saber"
+# shortcut to your Steam library as a VR game. Your normal Beat Saber is not touched.
 #
 # Options:
-#   --uninstall   remove the shortcut and the modded copy (asks first: your downloaded songs are in it)
+#   --uninstall   remove the shortcut and the Encore copy (asks first: your downloaded songs are in it)
 #   --yes         don't ask (with --uninstall)
 #   --help
 set -euo pipefail
@@ -18,14 +18,14 @@ DEPOT=620981
 MANIFEST=8437413909225671968     # Beat Saber 1.40.8 on Steam
 BUILD_TAG=1.40.8_7379
 PROTON_TOOL=proton_11-arm64      # Steam's "Proton 11.0 (ARM64)"
-NAME="${BS_SHORTCUT_NAME:-Beat Saber (Modded)}"
+NAME="${BS_SHORTCUT_NAME:-Beat Saber}"
 STEAM="$HOME/.local/share/Steam"
 INSTANCE="${BS_INSTANCE_DIR:-$HOME/.local/share/BSManager/BSInstances/1.40.8}"
-STATE="$HOME/.local/share/frame-modded-beatsaber"
+STATE="$HOME/.local/share/encore"
 CACHE="$STATE/cache"
 FLAG="$HOME/.steam/steam/.cef-enable-remote-debugging"
 MARKER="$STATE/created-cef-flag"
-SENTINEL=".frame-modded-beatsaber"   # written into the game folder this installer downloads
+SENTINEL=".encore"   # written into the game folder this installer downloads
 CEF=127.0.0.1:8080
 
 # md5 (BeatMods zipHash)  version  name. Resolved from BeatMods for game version 1.40.8, dependencies included.
@@ -83,7 +83,7 @@ ask() { # ask "question" -> 0 for yes. Reads the terminal even under curl | bash
 write_cef_helper() {
     cat > "$TMP/cef.py" <<'PY'
 import base64, json, os, socket, struct, sys, urllib.request
-expr = sys.argv[1]
+expr = sys.stdin.read() if sys.argv[1] == "-" else sys.argv[1]
 targets = json.load(urllib.request.urlopen("http://127.0.0.1:8080/json", timeout=5))
 t = next((t for t in targets if t.get("title") == "SharedJSContext"), None)
 if not t:
@@ -175,7 +175,7 @@ restore_flag() {
 
 # --- uninstall ----------------------------------------------------------------------------------
 uninstall() {
-    if [ -d "$INSTANCE" ] && game_running; then die "the modded Beat Saber is running; quit it first"; fi
+    if [ -d "$INSTANCE" ] && game_running; then die "Encore is running; quit it first"; fi
     if cef_up; then
         local id; id="$(find_shortcut)"
         if [ -n "$id" ]; then
@@ -190,7 +190,7 @@ uninstall() {
     if [ -d "$INSTANCE" ] && [ ! -f "$INSTANCE/$SENTINEL" ]; then
         say "Kept $INSTANCE: this installer did not create it"
     elif [ -d "$INSTANCE" ]; then
-        if ask "Delete $INSTANCE (the modded game AND every custom song you downloaded into it)?"; then
+        if ask "Delete $INSTANCE (the Encore copy of Beat Saber AND every custom song you downloaded into it)?"; then
             rm -rf "$INSTANCE"
             say "Deleted $INSTANCE"
         else
@@ -264,7 +264,7 @@ download_game() {
     grep -a -q "$BUILD_TAG" "$dst/Beat Saber_Data/globalgamemanagers" || die "the downloaded game is not 1.40.8"
     mkdir -p "$(dirname "$INSTANCE")"
     mv "$dst" "$INSTANCE"
-    echo "Downloaded by frame-modded-beatsaber; --uninstall deletes this folder only when this file exists." > "$INSTANCE/$SENTINEL"
+    echo "Downloaded by Encore; --uninstall deletes this folder only when this file exists." > "$INSTANCE/$SENTINEL"
     rmdir "$(dirname "$dst")" 2>/dev/null || true
     say "Beat Saber 1.40.8 is at $INSTANCE"
 }
@@ -277,7 +277,7 @@ install_mods() {
         [ -n "$md5" ] || continue
         z="$CACHE/$name-$ver.zip"
         if [ ! -f "$z" ] || [ "$(md5sum "$z" | cut -d' ' -f1)" != "$md5" ]; then
-            curl -fsSL --retry 3 -A "frame-modded-beatsaber" -o "$z.part" "https://beatmods.com/cdn/mod/$md5.zip" ||
+            curl -fsSL --retry 3 -A "encore-installer" -o "$z.part" "https://beatmods.com/cdn/mod/$md5.zip" ||
                 die "could not download $name"
             [ "$(md5sum "$z.part" | cut -d' ' -f1)" = "$md5" ] || { rm -f "$z.part"; die "checksum mismatch for $name"; }
             mv "$z.part" "$z"
@@ -304,6 +304,28 @@ install_mods() {
     say "Mods installed ($(ls "$INSTANCE/Plugins" | grep -c '\.dll$') plugin files)"
 }
 
+# Beat Saber's own library artwork, straight from Steam's image servers, so the shortcut looks like the game.
+set_artwork() { # <appid>
+    local id="$1" base=https://shared.steamstatic.com/store_item_assets/steam/apps/$APPID
+    local icon_url=https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/$APPID/d2922f271fca9579ecdcc07408cee13d87ca4148.jpg
+    local f type ext ok=0
+    # Steam's library asset types: 0 tall cover, 1 background, 2 logo, 3 wide banner
+    for f in "library_600x900_2x.jpg 0" "library_hero.jpg 1" "logo.png 2" "header.jpg 3"; do
+        set -- $f
+        ext="${1##*.}"
+        if curl -fsSL --retry 2 -o "$TMP/art.$ext" "$base/$1"; then
+            { printf '(async () => { await SteamClient.Apps.SetCustomArtworkForApp(%s, "' "$id"
+              base64 -w0 "$TMP/art.$ext"
+              printf '", "%s", %s); return "ok"; })()' "$ext" "$2"; } > "$TMP/art.js"
+            python3 "$TMP/cef.py" - < "$TMP/art.js" >/dev/null && ok=$((ok + 1))
+        fi
+    done
+    if curl -fsSL --retry 2 -o "$STATE/icon.jpg" "$icon_url"; then
+        cef "(() => { SteamClient.Apps.SetShortcutIcon($id, $(jstr "$STATE/icon.jpg")); return 'ok'; })()" >/dev/null && ok=$((ok + 1))
+    fi
+    if [ "$ok" = 5 ]; then say "Added Beat Saber's artwork and icon"; else warn "only $ok of 5 artwork pieces were set"; fi
+}
+
 add_shortcut() {
     local js_name js_exe js_dir id
     js_name="$(jstr "$NAME")"
@@ -328,6 +350,8 @@ add_shortcut() {
         return 'ok';
     })()" >/dev/null
 
+    set_artwork "$id"
+
     # Read it back from Steam to be sure every setting stuck.
     local got
     got="$(cef "(async () => { const id = $id; let d = appDetailsStore.GetAppDetails(id);
@@ -342,7 +366,7 @@ add_shortcut() {
 
 main() {
     case "${1:-}" in
-        -h|--help) sed -n '2,15p' "$0" 2>/dev/null || echo "see https://github.com/jimas21/frame-modded-beatsaber"; exit 0 ;;
+        -h|--help) sed -n '2,15p' "$0" 2>/dev/null || echo "see https://github.com/jimas21/encore"; exit 0 ;;
     esac
     ASSUME_YES=0; local mode=install
     for a in "$@"; do
@@ -359,7 +383,7 @@ main() {
     if [ "$mode" = uninstall ]; then uninstall; exit 0; fi
 
     check_system
-    game_running && die "the modded Beat Saber is running; quit it first"
+    game_running && die "Encore is running; quit it first"
     ensure_cef
     download_game
     install_mods
